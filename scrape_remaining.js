@@ -7,25 +7,23 @@ const START_INDEX = 0;
 
 function norm(c) { return c.toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
-const raw = require('./companies_scraped_today.json');
-const scrapedRaw = [...new Set(raw.map(s => s.replace(/\x1b\[[0-9;]*m/g, '').trim()).filter(s => s))];
-const scrapedNorm = new Set(scrapedRaw.map(norm));
-
 const all = require('./companies.json');
 
-const remaining = [];
 const seenNorm = new Set();
-
+const unique = [];
 all.forEach(c => {
   const n = norm(c);
-  if (scrapedNorm.has(n)) return;
   if (seenNorm.has(n)) return;
   seenNorm.add(n);
-  remaining.push(c);
+  unique.push(c);
 });
 
-console.log('Remaining after dedup:', remaining.length);
-console.log('Starting from index:', START_INDEX);
+console.log('Total unique companies:', unique.length);
+
+const totalRuns = 970;
+const startIdx = START_INDEX || (unique.length - totalRuns);
+console.log('Starting from index:', startIdx);
+console.log('Companies remaining:', unique.length - startIdx);
 
 function runWorkflow(company) {
   try {
@@ -58,14 +56,14 @@ async function waitForSlot() {
   }
 }
 
-const toScrape = remaining.slice(START_INDEX);
+const toScrape = unique.slice(startIdx);
 
 (async () => {
   let started = 0;
   for (const c of toScrape) {
     await waitForSlot();
     const running = getRunningCount();
-    console.log(`Running: ${running}, Started: ${started + START_INDEX}. ${c}`);
+    console.log(`Running: ${running}, Started: ${started + startIdx}. ${c}`);
     if (runWorkflow(c)) {
       started++;
     }
