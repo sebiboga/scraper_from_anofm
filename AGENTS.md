@@ -17,67 +17,58 @@ scraper_from_anofm/ (this repo)
                     4. Push jobs to Solr job core
 ```
 
-## Workflow Location
+## Important Notes
 
-- **Repository**: `peviitor-ro/peviitor_opencode_AI_scrapers`
-- **Workflow**: `.github/workflows/opencode_scraper_to_solr.yml`
-- **Workflow repo AGENTS.md**: See `peviitor_scrapers/AGENTS.md` for detailed scraping instructions
+1. **DO NOT commit companies_scraped_today.json** - This file should be regenerated each session, not stored in the repo.
+
+2. **Track progress by workflow run count** - Query the workflow runs to determine how many companies have been scraped:
+   ```bash
+   cd peviitor_scrapers
+   gh api "repos/peviitor-ro/peviitor_opencode_AI_scrapers/actions/workflows/opencode_scraper_to_solr.yml/runs?per_page=1" -q '.total_count'
+   ```
+
+3. **Avoid Duplicates** - The input file contains internal duplicates (~118):
+   - "AL PROMT" vs "AL PROMT SRL"
+   - "ALBERT DISTRIBUTION & LOGISTIC" vs "ALBERT DISTRIBUTION LOGISTICS"
+   
+   The script uses normalized comparison:
+   ```javascript
+   function norm(c) { return c.toLowerCase().replace(/[^a-z0-9]/g, ''); }
+   ```
+
+## Current Status
+
+- **Total companies in list**: 7005
+- **Unique companies (after dedup)**: 6918
+- **Total workflow runs**: ~970
+- **Remaining to scrape**: ~5948
 
 ## Running the Scraper
 
 ### Manual
 
 ```bash
+cd peviitor_scrapers
 gh workflow run .github/workflows/opencode_scraper_to_solr.yml -f company="COMPANY_NAME"
 ```
 
 ### Via Script
 
-Use `scrape_remaining.js` to automate multiple companies:
-
 ```bash
 node scrape_remaining.js
 ```
 
-## Workflow Location
-
-The GitHub Actions workflow is in: `peviitor-ro/peviitor_opencode_AI_scrapers/.github/workflows/opencode_scraper_to_solr.yml`
-
-## Running the Scraper
-
-### Manual
-
-```bash
-gh workflow run .github/workflows/opencode_scraper_to_solr.yml -f company="COMPANY_NAME"
-```
-
-### Via Script
-
-Use `scrape_remaining.js` to automate multiple companies:
-
-```bash
-node scrape_remaining.js
-```
+The script calculates remaining companies based on workflow run count, not from a file.
 
 ## Important Rules
 
 1. **Maximum 90 parallel workflows** - Check with:
    ```bash
+   cd peviitor_scrapers
    gh run list --status in_progress --workflow opencode_scraper_to_solr.yml -L 100
    ```
 
-2. **Avoid Duplicates** - The input file contains internal duplicates:
-   - "AL PROMT" vs "AL PROMT SRL"
-   - "ALBERT DISTRIBUTION & LOGISTIC" vs "ALBERT DISTRIBUTION LOGISTICS"
-   
-   Use normalized comparison:
-   ```javascript
-   function norm(c) { return c.toLowerCase().replace(/[^a-z0-9]/g, ''); }
-   ```
-
-3. **Filter Already Scraped** - Extract companies scraped TODAY from GitHub Actions logs
-
-4. **Queue Management** - Script automatically manages parallel count with CHECK_INTERVAL = 5 minutes
+2. **Queue Management** - Script automatically manages parallel count with CHECK_INTERVAL = 5 minutes
 
 ## Solr Credentials
 
@@ -97,6 +88,5 @@ path: '/solr/job/select?q=' + q + '&rows=0&facet=true&facet.field=company'
 
 ## Files
 
-- `companies.json` - Original company list (~7005 entries with ~118 internal duplicates)
-- `companies_scraped_today.json` - Companies scraped today (from GitHub Actions logs)
-- `scrape_remaining.js` - Queue management script
+- `companies.json` - Original company list (7005 entries with ~118 internal duplicates)
+- `scrape_remaining.js` - Queue management script (calculates remaining from workflow run count)
