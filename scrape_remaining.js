@@ -3,17 +3,11 @@ const { execSync } = require('child_process');
 const MAX_PARALLEL = 90;
 const CHECK_INTERVAL = 5 * 60 * 1000;
 
-function getTotalRunsToday() {
+function getTotalRuns() {
   try {
-    const out = execSync('gh run list -a --workflow opencode_scraper_to_solr.yml -L 1000 --json createdAt', {
-      cwd: '/home/sebi/opencode-ai/peviitor_scrapers',
-      encoding: 'utf8',
-      stdio: 'pipe'
-    });
-    const runs = JSON.parse(out);
-    const today = new Date().toISOString().substring(0, 10);
-    const count = runs.filter(r => r.createdAt.startsWith(today)).length;
-    console.log(`Found ${count} runs today`);
+    const out = execSync('gh api "repos/peviitor-ro/peviitor_opencode_AI_scrapers/actions/workflows/opencode_scraper_to_solr.yml/runs?per_page=1" -q ".total_count"');
+    const count = parseInt(out.trim(), 10);
+    console.log(`Found ${count} total runs`);
     return count;
   } catch (e) {
     console.log('Error getting runs:', e.message);
@@ -36,8 +30,8 @@ all.forEach(c => {
 
 console.log('Total unique companies:', unique.length);
 
-const totalRuns = getTotalRunsToday();
-console.log('Total runs today:', totalRuns);
+const totalRuns = getTotalRuns();
+console.log('Total runs:', totalRuns);
 console.log('Starting from index:', totalRuns);
 console.log('Companies remaining:', unique.length - totalRuns);
 
