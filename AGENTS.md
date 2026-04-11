@@ -17,15 +17,21 @@ scraper_from_anofm/ (this repo)
                     4. Push jobs to Solr job core
 ```
 
-## Important Notes
+## Session Rules
 
-1. **DO NOT commit companies_scraped_today.json** - This file should be regenerated each session, not stored in the repo.
+**DO NOT commit any generated files to GitHub!**
 
-2. **Track progress by workflow run count** - Query the workflow runs to determine how many companies have been scraped:
-   ```bash
-   cd peviitor_scrapers
-   gh api "repos/peviitor-ro/peviitor_opencode_AI_scrapers/actions/workflows/opencode_scraper_to_solr.yml/runs?per_page=1" -q '.total_count'
-   ```
+At the start of each session:
+1. Query workflow runs to get total count for today
+2. Calculate remaining = unique companies (6918) - runs done
+3. Start scraping from index = runs done
+4. Track progress locally (in memory or temp file, NOT in repo)
+
+Example to get run count:
+```bash
+cd peviitor_scrapers
+gh api "repos/peviitor-ro/peviitor_opencode_AI_scrapers/actions/workflows/opencode_scraper_to_solr.yml/runs?per_page=1" -q '.total_count'
+```
 
 3. **Avoid Duplicates** - The input file contains internal duplicates (~118):
    - "AL PROMT" vs "AL PROMT SRL"

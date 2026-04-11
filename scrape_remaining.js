@@ -1,9 +1,25 @@
 const { execSync } = require('child_process');
 
-const WORKDIR = 'peviitor_scrapers';
 const MAX_PARALLEL = 90;
 const CHECK_INTERVAL = 5 * 60 * 1000;
-const START_INDEX = 0;
+
+function getTotalRunsToday() {
+  try {
+    const out = execSync('gh run list -a --workflow opencode_scraper_to_solr.yml -L 1000 --json createdAt', {
+      cwd: '/home/sebi/opencode-ai/peviitor_scrapers',
+      encoding: 'utf8',
+      stdio: 'pipe'
+    });
+    const runs = JSON.parse(out);
+    const today = new Date().toISOString().substring(0, 10);
+    const count = runs.filter(r => r.createdAt.startsWith(today)).length;
+    console.log(`Found ${count} runs today`);
+    return count;
+  } catch (e) {
+    console.log('Error getting runs:', e.message);
+    return 0;
+  }
+}
 
 function norm(c) { return c.toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
@@ -20,15 +36,15 @@ all.forEach(c => {
 
 console.log('Total unique companies:', unique.length);
 
-const totalRuns = 970;
-const startIdx = START_INDEX || (unique.length - totalRuns);
-console.log('Starting from index:', startIdx);
-console.log('Companies remaining:', unique.length - startIdx);
+const totalRuns = getTotalRunsToday();
+console.log('Total runs today:', totalRuns);
+console.log('Starting from index:', totalRuns);
+console.log('Companies remaining:', unique.length - totalRuns);
 
 function runWorkflow(company) {
   try {
     execSync(`gh workflow run .github/workflows/opencode_scraper_to_solr.yml -f company='${company}'`, {
-      cwd: WORKDIR,
+      cwd: '/home/sebi/opencode-ai/peviitor_scrapers',
       stdio: 'pipe'
     });
     return true;
@@ -38,7 +54,7 @@ function runWorkflow(company) {
 function getRunningCount() {
   try {
     const out = execSync('gh run list --status in_progress --workflow opencode_scraper_to_solr.yml -L 100', {
-      cwd: WORKDIR,
+      cwd: '/home/sebi/opencode-ai/peviitor_scrapers',
       encoding: 'utf8',
       stdio: 'pipe'
     });
@@ -56,14 +72,14 @@ async function waitForSlot() {
   }
 }
 
-const toScrape = unique.slice(startIdx);
+const toScrape = unique.slice(totalRuns);
 
 (async () => {
   let started = 0;
   for (const c of toScrape) {
     await waitForSlot();
     const running = getRunningCount();
-    console.log(`Running: ${running}, Started: ${started + startIdx}. ${c}`);
+    console.log(`Running: ${running}, Started: ${started + totalRuns}. ${c}`);
     if (runWorkflow(c)) {
       started++;
     }
