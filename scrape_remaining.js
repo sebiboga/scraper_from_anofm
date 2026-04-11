@@ -1,9 +1,9 @@
 const { execSync } = require('child_process');
 
-const WORKDIR = 'C:/sebi/opencode_ai/peviitor_opencode_AI_scrapers';
+const WORKDIR = 'peviitor_scrapers';
 const MAX_PARALLEL = 90;
 const CHECK_INTERVAL = 5 * 60 * 1000;
-const START_INDEX = 703;
+const START_INDEX = 0;
 
 function norm(c) { return c.toLowerCase().replace(/[^a-z0-9]/g, ''); }
 

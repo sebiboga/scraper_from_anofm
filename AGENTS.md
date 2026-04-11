@@ -2,7 +2,42 @@
 
 ## Project Context
 
-This project automates daily scraping of companies with ANOFM (Romanian National Employment Agency) jobs from Solr using GitHub Actions.
+This repo manages a queue of ~7000 companies and triggers GitHub Actions workflows in a **separate repository** to perform the actual scraping.
+
+## Architecture
+
+```
+scraper_from_anofm/ (this repo)
+    └── Triggers: peviitor-ro/peviitor_opencode_AI_scrapers/.github/workflows/opencode_scraper_to_solr.yml
+                                                                                    ↓
+                    Uses OpenCode with Chrome DevTools MCP to:
+                    1. Scrape company careers page for jobs
+                    2. Search ANAF API for CIF (company ID)
+                    3. Add/update company in Solr company core
+                    4. Push jobs to Solr job core
+```
+
+## Workflow Location
+
+- **Repository**: `peviitor-ro/peviitor_opencode_AI_scrapers`
+- **Workflow**: `.github/workflows/opencode_scraper_to_solr.yml`
+- **Workflow repo AGENTS.md**: See `peviitor_scrapers/AGENTS.md` for detailed scraping instructions
+
+## Running the Scraper
+
+### Manual
+
+```bash
+gh workflow run .github/workflows/opencode_scraper_to_solr.yml -f company="COMPANY_NAME"
+```
+
+### Via Script
+
+Use `scrape_remaining.js` to automate multiple companies:
+
+```bash
+node scrape_remaining.js
+```
 
 ## Workflow Location
 

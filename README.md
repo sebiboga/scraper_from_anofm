@@ -1,5 +1,8 @@
 # ANOFM Daily Company Scraper
 
+This repo triggers the GitHub Actions workflow located in:
+**`peviitor-ro/peviitor_opencode_AI_scrapers/.github/workflows/opencode_scraper_to_solr.yml`**
+
 Automation project for scraping all companies with ANOFM (Romanian National Employment Agency) jobs from Solr using GitHub Actions.
 
 ## About
