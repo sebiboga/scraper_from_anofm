@@ -25,14 +25,16 @@ jobs:
       - name: Check and reset for new day
         run: |
           TODAY=$(date +%Y-%m-%d)
-          if [ -f scraped_today.json ]; then
-            FILE_DATE=$(date -r scraped_today.json +%Y-%m-%d 2>/dev/null || stat -c %y scraped_today.json 2>/dev/null | cut -d' ' -f1 || echo "")
-            if [ "$FILE_DATE" != "$TODAY" ]; then
+          if [ -f last_date.json ]; then
+            LAST_DATE=$(cat last_date.json)
+            if [ "$LAST_DATE" != "$TODAY" ]; then
               echo "[]" > scraped_today.json
-              echo "New day detected, reset progress"
+              echo "$TODAY" > last_date.json
+              echo "New day detected ($TODAY), reset progress"
             fi
           else
             echo "[]" > scraped_today.json
+            echo "$TODAY" > last_date.json
           fi
 
       - name: Get current progress
@@ -53,9 +55,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           COUNT=$(node -e "console.log(JSON.parse(require('fs').readFileSync('scraped_today.json', 'utf8')).length)")
+          TODAY=$(date +%Y-%m-%d)
           CONTENT=$(base64 scraped_today.json)
-          SHA=$(gh api repos/sebiboga/scraper_from_anofm/contents/scraped_today.json -q .sha)
+          LAST_DATE_CONTENT=$(echo -n "$TODAY" | base64)
+          SHA=$(gh api repos/sebiboga/scraper_from_anofm/contents/scraped_today.json -q .sha 2>/dev/null || echo "")
+          LAST_DATE_SHA=$(gh api repos/sebiboga/scraper_from_anofm/contents/last_date.json -q .sha 2>/dev/null || echo "")
+          
           gh api -X PUT repos/sebiboga/scraper_from_anofm/contents/scraped_today.json \
-            -f message="Track $COUNT companies" \
+            -f message="Track $COUNT companies for $TODAY" \
             -f content="$CONTENT" \
-            -fsha="$SHA"
+            -fsha="$SHA" || true
+          
+          gh api -X PUT repos/sebiboga/scraper_from_anofm/contents/last_date.json \
+            -f message="Update last date to $TODAY" \
+            -f content="$LAST_DATE_CONTENT" \
+            -fsha="$LAST_DATE_SHA" || true
