@@ -36,9 +36,12 @@ jobs:
         run: node scrape_batch.js
 
       - name: Commit and push progress
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
+          COUNT=$(node -e "console.log(JSON.parse(require('fs').readFileSync('scraped_today.json', 'utf8')).length)")
           git add scraped_today.json
-          git commit -m "Track $(node -e 'console.log(JSON.parse(require(\"fs\").readFileSync(\"scraped_today.json\")).length)') companies" || echo "Nothing to commit"
-          git push
+          git commit -m "Track $COUNT companies" || echo "Nothing to commit"
+          git push https://$GH_TOKEN@github.com/sebiboga/scraper_from_anofm.git
