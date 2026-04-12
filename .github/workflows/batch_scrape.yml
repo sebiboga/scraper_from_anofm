@@ -6,7 +6,7 @@ on:
       batch_size:
         description: 'Number of companies to scrape'
         required: false
-        default: '150'
+        default: '575'
         type: string
   schedule:
     - cron: '0 * * * *'
