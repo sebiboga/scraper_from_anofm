@@ -54,7 +54,7 @@ console.log(`Total: ${unique.length}, Scraped: ${lastIndex}, Batch: ${batchSize}
     const running = getRunningCount();
     console.log(`Running: ${running}, Starting: ${lastIndex + started}. ${company}`);
     try {
-      execSync(`gh workflow run .github/workflows/opencode_scraper_to_solr.yml -f company='${company}' --repo peviitor-ro/peviitor_opencode_AI_scrapers`, {
+      execSync(`gh workflow run .github/workflows/opencode_scraper_to_solr.yml -f company="${company.replace(/"/g, '\\"')}" --repo peviitor-ro/peviitor_opencode_AI_scrapers`, {
         stdio: 'pipe'
       });
       scraped.push(company);
