@@ -62,18 +62,17 @@ gh workflow run .github/workflows/opencode_scraper_to_solr.yml -f company="COMPA
    - Filter out already scraped (normalized matching)
    - Remaining = total - scraped
 
-4. **Start workflows** (max ~20 parallel)
+4. **Trimite batch + curata** (repeta de 3-4 ori)
    ```bash
+   # Trimite ~27 companii, apoi commit
    node scrape_remaining.js
-   ```
-
-5. **Cleanup completed runs**
-   - Delete old completed runs to keep GitHub Actions fast
-   ```bash
+   git add scraped_today.json && commit -m "Track X companies" && push
+   
+   # Curata 1 pagina completed runs
    gh api ".../actions/runs?per_page=100" -q '[.workflow_runs[] | select(.status == "completed")] | .[] | .id' | while read id; do gh api -X DELETE ".../actions/runs/$id"; done
    ```
 
-6. **New Day = New Session**
+5. **New Day = New Session**
    - Delete scraped_today.json (or create new)
    - Re-extract companies from Solr (may have new jobs)
    - Start from index 0

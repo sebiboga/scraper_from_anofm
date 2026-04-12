@@ -105,8 +105,14 @@
             <pre>gh workflow run .github/workflows/opencode_scraper_to_solr.yml -f company='NUME_COMPANIE'</pre>
         </div>
         <div class="step">
-            <h3>Pas 4: Lucram pe batch-uri</h3>
-            <pre>node scrape_remaining.js</pre>
+            <h3>Pas 4: Trimite batch + curata</h3>
+            <p>3a. Trimite ~27 companii<br>3b. Salveaza scraped_today.json + commit<br>3c. Sterge 1 pagina de completed runs<br>3d. Repeat</p>
+            <pre># Batch + commit
+node scrape_remaining.js
+git add scraped_today.json && git commit -m "Track X companies" && git push
+
+# Curata 1 pagina completed
+gh api ".../actions/runs?per_page=100" -q '[.workflow_runs[] | select(.status == "completed")] | .[] | .id' | while read id; do gh api -X DELETE ".../actions/runs/$id"; done</pre>
         </div>
         <div class="step">
             <h3>Pas 5: Curatarea run-urilor completed</h3>
