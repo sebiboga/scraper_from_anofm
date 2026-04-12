@@ -14,13 +14,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           TOTAL=0
-          for i in 1 2 3 4 5 6 7 8 9 10; do
+          for i in $(seq 1 50); do
             ids=$(gh api "repos/peviitor-ro/peviitor_opencode_AI_scrapers/actions/runs?status=completed&per_page=10" --jq '.workflow_runs[].id')
             COUNT=0
             for id in $ids; do
               gh api -X DELETE "repos/peviitor-ro/peviitor_opencode_AI_scrapers/actions/runs/$id" 2>/dev/null && COUNT=$((COUNT+1)) || true
             done
             TOTAL=$((TOTAL+COUNT))
+            echo "Deleted $COUNT (total: $TOTAL)"
             [ $COUNT -eq 0 ] && break || true
+            sleep 1
           done
-          echo "Deleted $TOTAL completed runs"
+          echo "Deleted $TOTAL completed runs total"
