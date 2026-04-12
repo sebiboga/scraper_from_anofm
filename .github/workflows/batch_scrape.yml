@@ -41,7 +41,7 @@ jobs:
         run: |
           COUNT=$(node -e "console.log(JSON.parse(require('fs').readFileSync('scraped_today.json', 'utf8')).length)")
           CONTENT=$(base64 -w0 scraped_today.json)
-          SHA=$(git rev-parse HEAD)
+          SHA=$(gh api repos/sebiboga/scraper_from_anofm/contents/scraped_today.json -q .sha)
           gh api -X PUT repos/sebiboga/scraper_from_anofm/contents/scraped_today.json \
             -f message="Track $COUNT companies" \
             -f content="$CONTENT" \
