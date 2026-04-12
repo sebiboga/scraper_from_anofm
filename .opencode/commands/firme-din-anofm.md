@@ -85,3 +85,29 @@ node scrape_remaining.js
 - Rulam in `scraper_from_anofm/`
 - Workflow: `.github/workflows/opencode_scraper_to_solr.yml` din `peviitor-ro/peviitor_opencode_AI_scrapers`
 - Max ~20 parallel workflows (limita GitHub)
+
+---
+
+## ANAF API (pentru a gasi CIF din nume)
+
+### DemoANAF.ro
+```
+GET https://demoanaf.ro/api/company/:cui
+```
+Returneaza: denumire, adresa, CIF, TVA status, etc.
+
+### ANAF Official
+```
+POST https://webservicesp.anaf.ro/api/PlatitorTVA/v9
+Content-Type: application/json
+
+[{"cui": 12345678, "data": "2026-04-12"}]
+```
+
+### e-Factura Register
+```
+POST https://webservicesp.anaf.ro/api/registruroefactura/v1/interogare
+Content-Type: application/json
+
+[{"cui": 12345678, "data": "2026-04-12"}]
+```
