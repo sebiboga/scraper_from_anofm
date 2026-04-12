@@ -22,6 +22,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check and reset for new day
+        run: |
+          TODAY=$(date +%Y-%m-%d)
+          if [ -f scraped_today.json ]; then
+            FILE_DATE=$(date -r scraped_today.json +%Y-%m-%d 2>/dev/null || stat -c %y scraped_today.json 2>/dev/null | cut -d' ' -f1 || echo "")
+            if [ "$FILE_DATE" != "$TODAY" ]; then
+              echo "[]" > scraped_today.json
+              echo "New day detected, reset progress"
+            fi
+          else
+            echo "[]" > scraped_today.json
+          fi
+
       - name: Get current progress
         id: progress
         run: |
@@ -40,7 +53,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           COUNT=$(node -e "console.log(JSON.parse(require('fs').readFileSync('scraped_today.json', 'utf8')).length)")
-          CONTENT=$(base64 -w0 scraped_today.json)
+          CONTENT=$(base64 scraped_today.json)
           SHA=$(gh api repos/sebiboga/scraper_from_anofm/contents/scraped_today.json -q .sha)
           gh api -X PUT repos/sebiboga/scraper_from_anofm/contents/scraped_today.json \
             -f message="Track $COUNT companies" \
