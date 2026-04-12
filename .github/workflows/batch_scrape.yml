@@ -40,9 +40,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           COUNT=$(node -e "console.log(JSON.parse(require('fs').readFileSync('scraped_today.json', 'utf8')).length)")
+          echo $GH_TOKEN | gh auth login --with-token
+          gh config set prompt disabled
           git config --global user.email "sebiboga@users.noreply.github.com"
           git config --global user.name "sebiboga"
-          git remote set-url origin https://sebiboga:$GH_TOKEN@github.com/sebiboga/scraper_from_anofm.git
           git add scraped_today.json
           git commit -m "Track $COUNT companies" || echo "Nothing to commit"
           git push
