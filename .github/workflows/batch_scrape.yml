@@ -1,0 +1,37 @@
+name: Batch Scrape
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch_size:
+        description: 'Number of companies to scrape'
+        required: false
+        default: '20'
+        type: string
+  schedule:
+    - cron: '0 6 * * *'
+
+jobs:
+  trigger-scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get current progress
+        id: progress
+        run: |
+          INDEX=$(node -e "console.log(JSON.parse(require('fs').readFileSync('scraped_today.json', 'utf8')).length)")
+          echo "Current progress: $INDEX"
+          echo "index=$INDEX" >> $GITHUB_OUTPUT
+
+      - name: Trigger workflows
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          BATCH_SIZE: ${{ github.event.inputs.batch_size || '20' }}
+        run: |
+          node scrape_batch.js

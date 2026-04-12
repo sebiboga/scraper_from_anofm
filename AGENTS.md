@@ -2,7 +2,7 @@
 
 ## Project Context
 
-This repo manages a queue of ~7000 companies and triggers GitHub Actions workflows in a **separate repository** to perform the actual scraping.
+This repo manages a queue of ~5171 companies and triggers GitHub Actions workflows in a **separate repository** to perform the actual scraping.
 
 ## Architecture
 
@@ -21,60 +21,35 @@ scraper_from_anofm/ (this repo)
 
 **DO NOT commit any generated files to GitHub!**
 
-At the start of each session:
-1. Query workflow runs to get total count for today
-2. Calculate remaining = unique companies (6918) - runs done
-3. Start scraping from index = runs done
-4. Track progress locally (in memory or temp file, NOT in repo)
-
-Example to get run count:
-```bash
-cd peviitor_scrapers
-gh api "repos/peviitor-ro/peviitor_opencode_AI_scrapers/actions/workflows/opencode_scraper_to_solr.yml/runs?per_page=1" -q '.total_count'
-```
-
-3. **Avoid Duplicates** - The input file contains internal duplicates (~118):
-   - "AL PROMT" vs "AL PROMT SRL"
-   - "ALBERT DISTRIBUTION & LOGISTIC" vs "ALBERT DISTRIBUTION LOGISTICS"
-   
-   The script uses normalized comparison:
-   ```javascript
-   function norm(c) { return c.toLowerCase().replace(/[^a-z0-9]/g, ''); }
-   ```
-
-## Current Status
-
-- **Total companies in list**: 7005
-- **Unique companies (after dedup)**: 6918
-- **Total workflow runs**: ~970
-- **Remaining to scrape**: ~5948
-
-## Running the Scraper
-
-### Manual
-
-```bash
-cd peviitor_scrapers
-gh workflow run .github/workflows/opencode_scraper_to_solr.yml -f company="COMPANY_NAME"
-```
-
-### Via Script
+At the start of each session, simply run the script - it reads from `scraped_today.json` to know where to continue:
 
 ```bash
 node scrape_remaining.js
 ```
 
-The script calculates remaining companies based on workflow run count, not from a file.
+## Current Status
+
+- **Total unique companies**: 5171
+- **Already scraped**: Check with `node -e "console.log(JSON.parse(require('fs').readFileSync('scraped_today.json', 'utf8')).length)"`
+
+## Running the Scraper
+
+Just run:
+
+```bash
+node scrape_remaining.js
+```
+
+The script:
+1. Reads already scraped companies from `scraped_today.json`
+2. Starts from where it left off
+3. Limits to ~20 parallel workflows
+4. Saves progress incrementally
 
 ## Important Rules
 
-1. **Maximum 90 parallel workflows** - Check with:
-   ```bash
-   cd peviitor_scrapers
-   gh run list --status in_progress --workflow opencode_scraper_to_solr.yml -L 100
-   ```
-
-2. **Queue Management** - Script automatically manages parallel count with CHECK_INTERVAL = 5 minutes
+1. **Maximum 20 parallel workflows** - Script automatically manages this
+2. **Track progress in scraped_today.json** - This file tracks what was scraped today
 
 ## Solr Credentials
 
@@ -94,5 +69,6 @@ path: '/solr/job/select?q=' + q + '&rows=0&facet=true&facet.field=company'
 
 ## Files
 
-- `companies.json` - Original company list (7005 entries with ~118 internal duplicates)
-- `scrape_remaining.js` - Queue management script (calculates remaining from workflow run count)
+- `companies.json` - Original company list (5171 entries)
+- `scrape_remaining.js` - Queue management script
+- `scraped_today.json` - Tracks progress (DO NOT COMMIT)

@@ -5,7 +5,9 @@ const CHECK_INTERVAL = 5 * 60 * 1000;
 
 function getTotalRuns() {
   try {
-    const out = execSync('gh api "repos/peviitor-ro/peviitor_opencode_AI_scrapers/actions/workflows/opencode_scraper_to_solr.yml/runs?per_page=1" -q ".total_count"');
+    const out = execSync('gh api "repos/peviitor-ro/peviitor_opencode_AI_scrapers/actions/runs?per_page=1" -q ".total_count"', {
+      cwd: '/home/sebi/opencode-ai/scraper_from_anofm'
+    });
     const count = parseInt(out.trim(), 10);
     console.log(`Found ${count} total runs`);
     return count;
@@ -13,6 +15,31 @@ function getTotalRuns() {
     console.log('Error getting runs:', e.message);
     return 0;
   }
+}
+
+function getTodayRuns() {
+  try {
+    const out = execSync('gh api "repos/peviitor-ro/peviitor_opencode_AI_scrapers/actions/runs?per_page=100" --paginate -q "[.workflow_runs[] | select(.created_at >= \\"2026-04-11T20:00:00Z\\")] | length"', {
+      cwd: '/home/sebi/opencode-ai/scraper_from_anofm',
+      encoding: 'utf8'
+    });
+    return parseInt(out.trim(), 10);
+  } catch (e) {
+    return 0;
+  }
+}
+
+const fs = require('fs');
+
+function getScrapedToday() {
+  try {
+    return JSON.parse(fs.readFileSync('scraped_today.json', 'utf8'));
+  } catch { return []; }
+}
+
+function getLastIndex() {
+  const scraped = getScrapedToday();
+  return scraped.length;
 }
 
 function norm(c) { return c.toLowerCase().replace(/[^a-z0-9]/g, ''); }
@@ -30,10 +57,10 @@ all.forEach(c => {
 
 console.log('Total unique companies:', unique.length);
 
-const totalRuns = getTotalRuns();
-console.log('Total runs:', totalRuns);
-console.log('Starting from index:', totalRuns);
-console.log('Companies remaining:', unique.length - totalRuns);
+const lastIndex = getLastIndex();
+console.log('Already scraped today:', lastIndex);
+console.log('Starting from index:', lastIndex);
+console.log('Companies remaining:', unique.length - lastIndex);
 
 function runWorkflow(company) {
   try {
@@ -66,15 +93,18 @@ async function waitForSlot() {
   }
 }
 
-const toScrape = unique.slice(totalRuns);
+const toScrape = unique.slice(lastIndex);
+let scraped = getScrapedToday();
 
 (async () => {
   let started = 0;
   for (const c of toScrape) {
     await waitForSlot();
     const running = getRunningCount();
-    console.log(`Running: ${running}, Started: ${started + totalRuns}. ${c}`);
+    console.log(`Running: ${running}, Started: ${started + lastIndex}. ${c}`);
     if (runWorkflow(c)) {
+      scraped.push(c);
+      fs.writeFileSync('scraped_today.json', JSON.stringify(scraped, null, 2));
       started++;
     }
     await new Promise(r => setTimeout(r, 3000));
