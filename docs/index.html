@@ -85,7 +85,8 @@
             <div class="card"><h3>Pas 2: Verifica</h3><p>Vezi ce ai trimis azi</p></div>
             <div class="card"><h3>Pas 3: Trimite</h3><p>Workflow: opencode_scraper_to_solr.yml</p></div>
             <div class="card"><h3>Pas 4: Batch</h3><p>~27 companii -> commit -> continua</p></div>
-            <div class="card"><h3>Pas 5: Maine</h3><p>Noua zi = reextrage + reincepe</p></div>
+            <div class="card"><h3>Pas 5: Curata</h3><p>Sterge run-urile completed</p></div>
+            <div class="card"><h3>Pas 6: Maine</h3><p>Noua zi = reextrage + reincepe</p></div>
         </div>
     </div>
     <div id="docs" class="page docs">
@@ -108,7 +109,12 @@
             <pre>node scrape_remaining.js</pre>
         </div>
         <div class="step">
-            <h3>Pas 5: O noua zi = o noua sesiune</h3>
+            <h3>Pas 5: Curatarea run-urilor completed</h3>
+            <pre># Stergem run-urile completed (nu cele active/queued)
+gh api "repos/peviitor-ro/peviitor_opencode_AI_scrapers/actions/runs?per_page=100" -q '[.workflow_runs[] | select(.status == "completed")] | .[] | .id' | while read id; do gh api -X DELETE "repos/peviitor-ro/peviitor_opencode_AI_scrapers/actions/runs/$id"; done</pre>
+        </div>
+        <div class="step">
+            <h3>Pas 6: O noua zi = o noua sesiune</h3>
             <p>Stergem scraped_today.json - cream fisier NOU - reextragem din Solr</p>
         </div>
     </div>

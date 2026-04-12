@@ -49,25 +49,34 @@ gh workflow run .github/workflows/opencode_scraper_to_solr.yml -f company="COMPA
 
 ## Process
 
-1. **Get companies scraped today** from GitHub Actions logs
-   - companies_scraped_today.json contains entries with duplicates
-   - Must deduplicate (37 unique from ~70 entries)
-   - NOTE: These companies will be scraped again tomorrow (new day = fresh logs)
+1. **Get companies from Solr** (job core, facet by company)
+   - Query: `url:*anofm*` returns all jobs with ANOFM URLs
+   - Use facet to get unique company names
 
-2. **Filter remaining companies**
-   - companies.json has ~7005 companies
+2. **Get companies scraped today**
+   - companies_scraped_today.json contains entries for tracking
+   - Or use GitHub API to count today's runs
+
+3. **Filter remaining companies**
+   - companies.json has all companies
    - Filter out already scraped (normalized matching)
-   - Remaining: ~6887 unique
+   - Remaining = total - scraped
 
-3. **Start workflows** (max 90 parallel)
+4. **Start workflows** (max ~20 parallel)
    ```bash
    node scrape_remaining.js
    ```
 
-4. **Monitor**
+5. **Cleanup completed runs**
+   - Delete old completed runs to keep GitHub Actions fast
    ```bash
-   gh run list --status in_progress --workflow opencode_scraper_to_solr.yml -L 100
+   gh api ".../actions/runs?per_page=100" -q '[.workflow_runs[] | select(.status == "completed")] | .[] | .id' | while read id; do gh api -X DELETE ".../actions/runs/$id"; done
    ```
+
+6. **New Day = New Session**
+   - Delete scraped_today.json (or create new)
+   - Re-extract companies from Solr (may have new jobs)
+   - Start from index 0
 
 ## Duplicate Prevention
 
