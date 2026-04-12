@@ -22,6 +22,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Trigger cleanup workflow
+        run: |
+          gh workflow run cleanup.yml --repo sebiboga/scraper_from_anofm || true
+          echo "Cleanup workflow triggered"
+
       - name: Check and reset for new day
         run: |
           TODAY=$(date +%Y-%m-%d)
