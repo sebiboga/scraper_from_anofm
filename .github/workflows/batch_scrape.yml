@@ -9,7 +9,7 @@ on:
         default: '150'
         type: string
   schedule:
-    - cron: '*/20 * * * *'
+    - cron: '0 * * * *'
 
 jobs:
   trigger-scrape:
