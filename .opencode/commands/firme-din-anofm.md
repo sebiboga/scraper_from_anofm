@@ -90,7 +90,13 @@ node scrape_remaining.js
 
 ## ANAF API (pentru a gasi CIF din nume)
 
-### DemoANAF.ro
+### DemoANAF.ro - CAUTARE DUPA NUME ✅
+```
+GET https://demoanaf.ro/api/search?q=EMAG
+```
+Returneaza: CUI, name, registrationNumber, county, locality, legalForm, isInsolvent, statusLabel
+
+### DemoANAF.ro - DETALII DUPA CUI
 ```
 GET https://demoanaf.ro/api/company/:cui
 ```
