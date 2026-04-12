@@ -31,7 +31,6 @@ jobs:
 
       - name: Trigger workflows
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           BATCH_SIZE: ${{ github.event.inputs.batch_size || '20' }}
-        run: |
-          node scrape_batch.js
+        run: node scrape_batch.js
