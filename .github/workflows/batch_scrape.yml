@@ -6,10 +6,10 @@ on:
       batch_size:
         description: 'Number of companies to scrape'
         required: false
-        default: '20'
+        default: '50'
         type: string
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '*/20 * * * *'
 
 jobs:
   trigger-scrape:
