@@ -40,19 +40,25 @@ all.forEach(c => {
 });
 
 const batchSize = parseInt(process.env.BATCH_SIZE || '20');
-let scraped = [];
-try { scraped = JSON.parse(fs.readFileSync(BASE_DIR + '/scraped_today.json', 'utf8')); } catch { scraped = []; }
-const lastIndex = scraped.length;
-const toScrape = unique.slice(lastIndex, lastIndex + batchSize);
 
-console.log(`Total: ${unique.length}, Scraped: ${lastIndex}, Batch: ${batchSize}`);
+let scraped = [];
+try {
+  const latest = execSync(`gh api repos/sebiboga/scraper_from_anofm/contents/scraped_today.json -q .content`, { encoding: 'utf8' }).trim();
+  scraped = JSON.parse(Buffer.from(latest, 'base64').toString('utf8'));
+  fs.writeFileSync(BASE_DIR + '/scraped_today.json', JSON.stringify(scraped, null, 2));
+} catch { scraped = []; }
+
+const scrapedSet = new Set(scraped.map(s => norm(s)));
+const toScrape = unique.filter(c => !scrapedSet.has(norm(c))).slice(0, batchSize);
+
+console.log(`Total: ${unique.length}, Scraped: ${scraped.length}, To Scrape: ${toScrape.length}`);
 
 (async () => {
   let started = 0;
   for (const company of toScrape) {
     await waitForSlot();
     const running = getRunningCount();
-    console.log(`Running: ${running}, Starting: ${lastIndex + started}. ${company}`);
+    console.log(`Running: ${running}, Starting: ${scraped.length + started}. ${company}`);
     try {
       execSync(`gh workflow run .github/workflows/opencode_scraper_to_solr.yml -f company="${company.replace(/"/g, '\\"')}" --repo peviitor-ro/peviitor_opencode_AI_scrapers`, {
         stdio: 'pipe'
