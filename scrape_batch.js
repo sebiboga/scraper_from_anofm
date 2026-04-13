@@ -18,13 +18,20 @@ function getRunningCount() {
   } catch { return 0; }
 }
 
-async function waitForSlot() {
-  let running = getRunningCount();
-  while (running >= MAX_PARALLEL) {
-    console.log(`Waiting for slot... (${running} running)`);
-    await new Promise(r => setTimeout(r, CHECK_INTERVAL));
-    running = getRunningCount();
-  }
+function getPeviitorRecentCompanies() {
+  try {
+    const out = execSync('gh run list -L 20 --repo peviitor-ro/peviitor_opencode_AI_scrapers', {
+      encoding: 'utf8',
+      stdio: 'pipe'
+    });
+    const companies = [];
+    const lines = out.split('\n');
+    for (const line of lines) {
+      const match = line.match(/company=(\S+)/);
+      if (match) companies.push(match[1].replace(/%20/g, ' ').replace(/\\/g, ''));
+    }
+    return companies;
+  } catch { return []; }
 }
 
 function norm(c) { return c.toLowerCase().replace(/[^a-z0-9]/g, ''); }
@@ -48,10 +55,17 @@ try {
   fs.writeFileSync(BASE_DIR + '/scraped_today.json', JSON.stringify(scraped, null, 2));
 } catch { scraped = []; }
 
-const scrapedSet = new Set(scraped.map(s => norm(s)));
-const toScrape = unique.filter(c => !scrapedSet.has(norm(c))).slice(0, batchSize);
+const peviitorRecent = getPeviitorRecentCompanies();
+const peviitorRecentSet = new Set(peviitorRecent.map(s => norm(s)));
 
-console.log(`Total: ${unique.length}, Scraped: ${scraped.length}, To Scrape: ${toScrape.length}`);
+const scrapedSet = new Set(scraped.map(s => norm(s)));
+const toScrape = unique.filter(c => {
+  if (scrapedSet.has(norm(c))) return false;
+  if (peviitorRecentSet.has(norm(c))) return false;
+  return true;
+}).slice(0, batchSize);
+
+console.log(`Total: ${unique.length}, Scraped: ${scraped.length}, Peviitor Recent: ${peviitorRecent.length}, To Scrape: ${toScrape.length}`);
 
 (async () => {
   let started = 0;
@@ -85,3 +99,12 @@ console.log(`Total: ${unique.length}, Scraped: ${scraped.length}, To Scrape: ${t
   }
   console.log(`Started: ${started} companies`);
 })();
+
+async function waitForSlot() {
+  let running = getRunningCount();
+  while (running >= MAX_PARALLEL) {
+    console.log(`Waiting for slot... (${running} running)`);
+    await new Promise(r => setTimeout(r, CHECK_INTERVAL));
+    running = getRunningCount();
+  }
+}
