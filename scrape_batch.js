@@ -18,6 +18,15 @@ function getRunningCount() {
   } catch { return 0; }
 }
 
+async function waitForSlot() {
+  let running = getRunningCount();
+  while (running >= MAX_PARALLEL) {
+    console.log(`Waiting for slot... (${running} running)`);
+    await new Promise(r => setTimeout(r, CHECK_INTERVAL));
+    running = getRunningCount();
+  }
+}
+
 function getPeviitorRecentCompanies() {
   try {
     const out = execSync('gh run list -L 20 --repo peviitor-ro/peviitor_opencode_AI_scrapers', {
@@ -46,7 +55,7 @@ all.forEach(c => {
   unique.push(c);
 });
 
-const batchSize = parseInt(process.env.BATCH_SIZE || '20');
+const batchSize = parseInt(process.env.BATCH_SIZE || '3');
 
 let scraped = [];
 try {
@@ -99,12 +108,3 @@ console.log(`Total: ${unique.length}, Scraped: ${scraped.length}, Peviitor Recen
   }
   console.log(`Started: ${started} companies`);
 })();
-
-async function waitForSlot() {
-  let running = getRunningCount();
-  while (running >= MAX_PARALLEL) {
-    console.log(`Waiting for slot... (${running} running)`);
-    await new Promise(r => setTimeout(r, CHECK_INTERVAL));
-    running = getRunningCount();
-  }
-}
