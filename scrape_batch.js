@@ -66,6 +66,11 @@ console.log(`Total: ${unique.length}, Scraped: ${lastIndex}, Batch: ${batchSize}
         const content = Buffer.from(JSON.stringify(scraped)).toString('base64');
         const sha = execSync(`gh api repos/sebiboga/scraper_from_anofm/contents/scraped_today.json -q .sha`, { encoding: 'utf8' }).trim();
         execSync(`gh api -X PUT repos/sebiboga/scraper_from_anofm/contents/scraped_today.json -f message="Push ${started} companies" -f content="${content}" -fsha="${sha}"`, { stdio: 'pipe' });
+        
+        console.log(`Pulling latest progress...`);
+        const latest = execSync(`gh api repos/sebiboga/scraper_from_anofm/contents/scraped_today.json -q .content`, { encoding: 'utf8' }).trim();
+        scraped = JSON.parse(Buffer.from(latest, 'base64').toString('utf8'));
+        fs.writeFileSync(BASE_DIR + '/scraped_today.json', JSON.stringify(scraped, null, 2));
       }
     } catch (e) {
       console.log('Error:', e.message);
